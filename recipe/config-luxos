@@ -18,3 +18,8 @@ CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y
 CONFIG_TCP_CONG_BBR=y
 CONFIG_DEFAULT_BBR=y
 CONFIG_DEFAULT_TCP_CONG="bbr"
+
+# Lux Guard (luxos-guard): kontrola spusteni stazenych souboru pres fanotify - build spadne, kdyby je
+# zakladni konfigurace Archu nekdy vypnula
+CONFIG_FANOTIFY=y
+CONFIG_FANOTIFY_ACCESS_PERMISSIONS=y
