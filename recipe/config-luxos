@@ -1,0 +1,20 @@
+# LuxOS - changes on top of the Arch Linux kernel configuration.
+#
+# The base is Arch's config.x86_64 (every driver as a module = plug and play on any PC), fetched at
+# build time. Only what is listed here differs. ci/build.sh checks after "make olddefconfig" that every
+# value below really ended up in the final .config - if a new kernel renames or drops an option, the
+# build fails loudly instead of silently shipping something else.
+#
+# Memory: no "max SMP" sizing (8192 CPUs) - 512 is plenty for desktops and workstations and makes
+# per-CPU structures smaller.
+# CONFIG_MAXSMP is not set
+CONFIG_NR_CPUS=512
+# Memory: transparent huge pages only where programs ask for them (madvise) - "always" makes small
+# programs take 2 MiB pages and costs RAM on 4-8 GB laptops; big apps (browsers, JVM, databases)
+# still use them.
+# CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS is not set
+CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y
+# Network: BBR congestion control by default (faster on Wi-Fi and lossy links than cubic).
+CONFIG_TCP_CONG_BBR=y
+CONFIG_DEFAULT_BBR=y
+CONFIG_DEFAULT_TCP_CONG="bbr"

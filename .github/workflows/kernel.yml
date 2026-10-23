@@ -1,0 +1,129 @@
+# LuxOS kernel: check kernel.org every 6 hours, build the version chosen by ci/pick-version.py,
+# boot-test it and publish a GitHub release with the packages and a build provenance attestation.
+# The LuxOS repository server picks releases up from here, verifies them and signs them.
+name: kernel
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Build this kernel version (e.g. 7.2.12) even if it was released already"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths: ["recipe/**", "ci/**", ".github/workflows/kernel.yml"]
+
+concurrency:
+  group: kernel
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.pick.outputs.version }}
+      tag: ${{ steps.pick.outputs.tag }}
+      build: ${{ steps.pick.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list --limit 200 --json tagName --jq '.[].tagName' > tags.txt
+          python3 ci/pick-version.py --tags tags.txt --pkgrel "$(cat recipe/pkgrel)" \
+              --force "${{ github.event.inputs.version }}" | tee -a "$GITHUB_OUTPUT"
+
+  build:
+    needs: check
+    if: needs.check.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space (the runner has ~14 GB free by default)
+        run: |
+          df -h / /mnt
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+              /opt/hostedtoolcache /usr/local/share/boost /usr/share/swift /usr/local/share/powershell \
+              /usr/local/share/chromium /usr/local/lib/node_modules /opt/microsoft /opt/google \
+              /usr/lib/jvm /opt/az /usr/share/miniconda || true
+          sudo docker image prune --all --force >/dev/null || true
+          sudo swapoff -a || true
+          sudo rm -f /mnt/swapfile /swapfile || true
+          df -h / /mnt
+          # scratch space on the bigger disk
+          if [ "$(df --output=avail -B1G /mnt | tail -1)" -gt "$(df --output=avail -B1G / | tail -1)" ]; then
+            sudo mkdir -p /mnt/build && sudo chmod 777 /mnt/build && echo "SCRATCH=/mnt/build" >> "$GITHUB_ENV"
+          else
+            sudo mkdir -p /build && sudo chmod 777 /build && echo "SCRATCH=/build" >> "$GITHUB_ENV"
+          fi
+
+      - name: Enable KVM for the boot test
+        run: |
+          if [ -e /dev/kvm ]; then
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+            sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm || true
+            echo "KVM_ARGS=--device /dev/kvm" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build and boot-test linux-luxos ${{ needs.check.outputs.version }}
+        run: |
+          docker run --rm $KVM_ARGS -e GITHUB_SHA -v "$PWD:/work" -v "$SCRATCH:/build" \
+              archlinux:base-devel bash /work/ci/build.sh "${{ needs.check.outputs.version }}"
+          ls -la out
+
+      - name: Provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "out/*.pkg.tar.zst"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.check.outputs.tag }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          {
+            echo "Linux $VERSION for LuxOS (linux-luxos, recipe pkgrel $(cat recipe/pkgrel))."
+            echo
+            echo '```'
+            cat out/build-info.txt
+            echo '```'
+          } > notes.md
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" --title "linux-luxos $VERSION" --notes-file notes.md \
+              out/*.pkg.tar.zst out/SHA256SUMS out/config out/build-info.txt
+
+      - name: Upload log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: out/build.log
+          if-no-files-found: ignore
+
+  report-failure:
+    needs: [check, build]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open an issue (GitHub e-mails the repository owner)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          title="Kernel build failed: ${{ needs.check.outputs.version || 'version check' }}"
+          body="Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          num=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$num" ]; then gh issue comment "$num" --body "$body"; else gh issue create --title "$title" --body "$body"; fi
