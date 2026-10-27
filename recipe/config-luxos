@@ -23,3 +23,17 @@ CONFIG_DEFAULT_TCP_CONG="bbr"
 # zakladni konfigurace Archu nekdy vypnula
 CONFIG_FANOTIFY=y
 CONFIG_FANOTIFY_ACCESS_PERMISSIONS=y
+
+# Desktop responsiveness: 1000 Hz timer tick (1 ms scheduler granularity, smoother input and audio)
+# and full preemption as the default mode. PREEMPT_DYNAMIC stays on, so "preempt=voluntary" or
+# "preempt=none" on the kernel command line still switches a server to throughput. Arch's base config
+# has these values today; they are pinned here so the build fails loudly if the base ever changes.
+CONFIG_HZ_1000=y
+CONFIG_HZ=1000
+CONFIG_PREEMPT=y
+CONFIG_PREEMPT_DYNAMIC=y
+# sched_ext: LuxOS runs the scx_lavd scheduler (BPF program, needs BTF type info). Without these the
+# system silently keeps the normal scheduler, so a base config change must not drop them unnoticed.
+CONFIG_SCHED_CLASS_EXT=y
+CONFIG_BPF_JIT=y
+CONFIG_DEBUG_INFO_BTF=y
