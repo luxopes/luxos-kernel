@@ -43,3 +43,4 @@
 0420-pci-add-intel-remapped-nvme-device-support.patch | PCI: Add Intel remapped NVMe device support | luxos (own, see the patch description)
 0430-kbuild-llvm-loop-pipelining-also-at-thinlto-link-time-build.patch | kbuild: LLVM loop pipelining, also at ThinLTO link time; build fix for bus master check | luxos (own, see the patch description)
 0440-sched-bore-burst-oriented-response-enhancer.patch | sched: BORE (Burst-Oriented Response Enhancer) | CachyOS/kernel-patches 7.3/sched/0001-bore-cachy.patch
+0415-revert-drm-gud-validate-tv-mode-names-clang-o3.patch | Revert "drm/gud: validate TV mode names before creating enum property" (breaks clang -O3 with LTO; the name is NUL-terminated instead) | CachyOS/linux 7.3/fixes 0c24cdda312d
