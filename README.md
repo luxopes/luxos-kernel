@@ -2,8 +2,18 @@
 
 The kernel of [LuxOS](https://lsl.lux-ai.cz/luxos/) (`linux-luxos`), built automatically.
 
+- **Code:** <https://git.lux-ai.cz/LuxAI/luxos-kernel> – push changes here. The `main` branch is copied to
+  GitHub (<https://github.com/luxopes/luxos-kernel>) within a minute, fast-forward only
+  (`luxos-kernel-sync.timer` on the LuxOS server, write deploy key for that one repository); GitHub runs
+  the CI and holds the releases. Do not push to GitHub directly: the copy would stop (no force push).
+
 - **Source:** vanilla stable Linux from kernel.org, signature checked against Linus Torvalds' and
   Greg Kroah-Hartman's keys. No out-of-tree patches, so every new release builds unattended.
+- **Compiler:** clang with ThinLTO (`LLVM=1`, `CONFIG_LTO_CLANG_THIN`): the whole kernel is optimised
+  across source files at link time, like CachyOS. DKMS builds out-of-tree modules (NVIDIA) with clang too,
+  so `linux-luxos-headers` depends on clang, lld and llvm. Cost: no Rust in the kernel (Linux 7.3 does
+  not allow Rust together with LTO and BTF; BTF is needed by sched_ext), so no Rust Binder (Waydroid) and
+  no QR code on the panic screen.
 - **Configuration:** Arch Linux's kernel config as the base (every driver as a module, so any PC works
   out of the box) plus the LuxOS changes in [`recipe/config-luxos`](recipe/config-luxos). The build fails
   if a LuxOS option stops applying to a new kernel.

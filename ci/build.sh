@@ -17,7 +17,7 @@ ARCH_REPO_API=https://gitlab.archlinux.org/api/v4/projects/archlinux%2Fpackaging
 step() { printf '\n==> %s\n' "$*"; }
 
 step "Build dependencies"
-pacman -Syu --noconfirm --needed bc cpio gettext libelf pahole perl python rust rust-bindgen rust-src \
+pacman -Syu --noconfirm --needed bc clang lld llvm cpio gettext libelf pahole perl python rust rust-bindgen rust-src \
     tar xxhash xz zlib zstd git curl gnupg file qemu-base busybox kmod >/dev/null
 useradd -m builder 2>/dev/null || true
 mkdir -p "$BUILD" "$OUT"
@@ -65,7 +65,7 @@ sha256sum ./*.pkg.tar.zst config > SHA256SUMS
     echo "arch config:     $ARCH_CONFIG_URL"
     echo "arch commit:     $arch_commit"
     echo "build time:      $(( (end - start) / 60 )) min on $(nproc) CPUs"
-    echo "compiler:        $(gcc --version | head -1)"
+    echo "compiler:        $(clang --version | head -1), ThinLTO"
     echo "rust:            $(rustc --version)"
 } > build-info.txt
 cat build-info.txt

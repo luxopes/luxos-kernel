@@ -2,8 +2,9 @@
 #
 # linux-luxos - the LuxOS kernel: vanilla stable Linux from kernel.org (signature checked), Arch Linux's
 # configuration as the base (every driver as a module, so any hardware works out of the box) and the
-# LuxOS changes from config-luxos on top. No out-of-tree patches, so every new stable release builds
-# with this recipe unchanged (see ci/pick-version.py and .github/workflows/kernel.yml).
+# LuxOS changes from config-luxos on top, compiled with clang and ThinLTO (like CachyOS: optimisation
+# across source files of the whole kernel, a few percent faster). No out-of-tree patches, so every new
+# stable release builds with this recipe unchanged (see ci/pick-version.py and .github/workflows/kernel.yml).
 #
 # pkgver comes from the build (LUXOS_KVER), pkgrel from the file "pkgrel" (raise it when this recipe
 # changes). config.arch is fetched by ci/build.sh from Arch's packaging repository.
@@ -12,11 +13,11 @@ pkgbase=linux-luxos
 pkgver=${LUXOS_KVER:-0}
 pkgrel=$(cat "${startdir:-.}/pkgrel" 2>/dev/null || echo 1)
 pkgdesc='LuxOS'
-url='https://github.com/luxopes/luxos-kernel'
+url='https://git.lux-ai.cz/LuxAI/luxos-kernel'
 arch=(x86_64)
 license=(GPL-2.0-only)
-makedepends=(bc binutils cpio gettext glibc libelf libgcc openssl pahole perl python rust rust-bindgen
-             rust-src tar xxhash xz zlib zstd)
+makedepends=(bc binutils clang cpio gettext glibc libelf libgcc lld llvm openssl pahole perl python rust
+             rust-bindgen rust-src tar xxhash xz zlib zstd)
 options=(!debug !strip)
 _srcname=linux-$pkgver
 source=(
@@ -33,6 +34,8 @@ validpgpkeys=(
 # files of this repository / fetched and recorded by ci/build.sh.
 sha256sums=(SKIP SKIP SKIP SKIP)
 
+# clang, lld and LLVM tools for every make call (config, build, install); ThinLTO is in config-luxos
+export LLVM=1
 export KBUILD_BUILD_HOST=luxos
 export KBUILD_BUILD_USER=$pkgbase
 export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
@@ -101,7 +104,8 @@ _package() {
 
 _package-headers() {
   pkgdesc="Headers and scripts for building modules for the $pkgdesc kernel"
-  depends=(binutils glibc libelf libgcc openssl pahole xxhash zlib zstd)
+  # the kernel is built with clang: DKMS (NVIDIA ...) builds its modules with LLVM=1 too
+  depends=(binutils clang glibc libelf libgcc lld llvm openssl pahole xxhash zlib zstd)
   provides=(LINUX-HEADERS)
 
   cd $_srcname
