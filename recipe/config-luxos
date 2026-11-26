@@ -26,8 +26,23 @@ CONFIG_FANOTIFY_ACCESS_PERMISSIONS=y
 
 # Speed: link-time optimisation across the whole kernel (clang ThinLTO; needs LLVM=1 in the PKGBUILD -
 # with gcc these options are not available and the build fails here).
-# Cost (Linux 7.3): Rust cannot be combined with LTO and BTF (init/Kconfig), and BTF stays (sched_ext,
-# scx_lavd). Without Rust: no Rust Binder (Android containers such as Waydroid, not shipped by LuxOS) and
-# no QR code on the kernel panic screen (the panic message is still shown). Also no x32 ABI (LLVM).
+# Upstream Linux forbids Rust together with LTO and BTF; the patch "rust: Allow BTF generation with
+# Rust + LTO" (CachyOS, needs pahole with --lang_exclude) lifts that, so Rust stays (Rust Binder, panic
+# QR code). x32 ABI is not available with LLVM.
 # CONFIG_LTO_NONE is not set
 CONFIG_LTO_CLANG_THIN=y
+CONFIG_RUST=y
+
+# LuxOS patch set (patches/<series>/): the options below exist only with the patches, so this check
+# also proves that the patches were applied.
+# CachyOS desktop tunables (EEVDF slices for interactivity, no proactive compaction, no watermark
+# boosting, split lock mitigation off, lru-gen protects the working set of the last 100 ms, ...).
+CONFIG_CACHY=y
+# BORE scheduler: interactive tasks first when the kernel's own scheduler runs (scx_lavd not running,
+# SCHEDULER=default, or the fallback after a scx_lavd crash).
+CONFIG_SCHED_BORE=y
+# -O3 instead of -O2 (CachyOS)
+# CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE is not set
+CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE_O3=y
+# AMD display colour management properties (HDR in gamescope / Steam)
+CONFIG_AMD_PRIVATE_COLOR=y

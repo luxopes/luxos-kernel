@@ -12,11 +12,14 @@ Policy:
     bug fixes are never held back).
   - Never go back to an older series (no downgrade from 7.2 to 6.18).
   - Each version is built once per recipe revision (tag v<version>-<pkgrel>).
+  - Only series that have the LuxOS patch set (recipe/patches/<series>/); a new series waits until its
+    patches are added, the current one keeps getting point releases.
 
   ci/pick-version.py [--releases FILE] [--tags FILE] [--pkgrel N] [--force VERSION]
 """
 import argparse
 import json
+import os
 import sys
 import urllib.request
 
@@ -36,14 +39,26 @@ def series(t):
     return t[:2]
 
 
-def choose(releases, tags):
+def patched_series(patches_dir):
+    """Series with a LuxOS patch set: {(7, 3), ...}; None = no restriction (directory missing)."""
+    if not os.path.isdir(patches_dir):
+        return None
+    out = set()
+    for name in os.listdir(patches_dir):
+        t = vtuple(name)
+        if t and name.count(".") == 1:
+            out.add(series(t))
+    return out
+
+
+def choose(releases, tags, patched=None):
     """(version, reason) from releases.json entries and released tag names."""
     usable = []
     for r in releases:
         if r.get("moniker") not in ("stable", "longterm") or r.get("iseol"):
             continue
         t = vtuple(r.get("version", ""))
-        if t:
+        if t and (patched is None or series(t) in patched):
             usable.append((t, r["version"], r.get("moniker")))
     if not usable:
         raise SystemExit("no usable stable release in releases.json")
@@ -92,6 +107,8 @@ def main():
     ap.add_argument("--tags", help="file with one released tag per line")
     ap.add_argument("--pkgrel", default="1")
     ap.add_argument("--force", default="", help="build this version even if it exists")
+    ap.add_argument("--patches", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "recipe", "patches"),
+                    help="directory with one LuxOS patch set per series (7.3, 7.4, ...)")
     a = ap.parse_args()
     if a.releases:
         with open(a.releases) as f:
@@ -108,7 +125,7 @@ def main():
             raise SystemExit(f"invalid version {a.force!r}")
         version, why, build = a.force, "forced by hand", True
     else:
-        version, why = choose(data.get("releases", []), tags)
+        version, why = choose(data.get("releases", []), tags, patched_series(a.patches))
         build = f"v{version}-{a.pkgrel}" not in tags
     print(f"version={version}")
     print(f"tag=v{version}-{a.pkgrel}")

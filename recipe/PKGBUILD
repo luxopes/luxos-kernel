@@ -3,8 +3,10 @@
 # linux-luxos - the LuxOS kernel: vanilla stable Linux from kernel.org (signature checked), Arch Linux's
 # configuration as the base (every driver as a module, so any hardware works out of the box) and the
 # LuxOS changes from config-luxos on top, compiled with clang and ThinLTO (like CachyOS: optimisation
-# across source files of the whole kernel, a few percent faster). No out-of-tree patches, so every new
-# stable release builds with this recipe unchanged (see ci/pick-version.py and .github/workflows/kernel.yml).
+# across source files of the whole kernel, a few percent faster), with the LuxOS patch set for the
+# series from patches/<series>/ (selected CachyOS patches: BORE, desktop tunables, zram, TSC, Intel RST
+# NVMe, Rust with LTO; and own LuxOS patches; list and origin in patches/<series>/SOURCES). Every point
+# release of a series builds unattended; a new series needs its patches/<series>/ first (see ci/pick-version.py and .github/workflows/kernel.yml).
 #
 # pkgver comes from the build (LUXOS_KVER), pkgrel from the file "pkgrel" (raise it when this recipe
 # changes). config.arch is fetched by ci/build.sh from Arch's packaging repository.
@@ -45,6 +47,15 @@ prepare() {
 
   echo "-$pkgrel" > localversion.10-pkgrel
   echo "${pkgbase#linux}" > localversion.20-pkgname
+
+  # LuxOS patch set of this series, in file name order; a patch that does not apply exactly (no fuzz)
+  # fails the build - a new point release that conflicts must be looked at, not guessed
+  local series=${pkgver%.*} p
+  [[ -d $startdir/patches/$series ]] || { echo "No LuxOS patches for Linux $series (patches/$series)" >&2; return 1; }
+  for p in "$startdir"/patches/$series/*.patch; do
+    echo "Applying ${p##*/}"
+    patch -Np1 -F0 --no-backup-if-mismatch -s < "$p"
+  done
 
   cp ../config.arch .config
   scripts/kconfig/merge_config.sh -m .config ../config-luxos

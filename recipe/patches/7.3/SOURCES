@@ -1,0 +1,45 @@
+# patch | subject | origin
+0010-add-sysctl-to-allow-disabling-unprivileged-clone-newuser.patch | add sysctl to allow disabling unprivileged CLONE_NEWUSER | CachyOS/linux 7.3/cachy e4cd5992b0de
+0020-kconfig-add-config-cachy.patch | Kconfig: Add CONFIG_CACHY | CachyOS/linux 7.3/cachy ad9d051f344c
+0030-mm-increase-vm-readahead-pages-to-256k.patch | mm: Increase VM_READAHEAD_PAGES to 256K | CachyOS/linux 7.3/cachy 96164dfbed0f
+0040-cachy-sched-fair-tweak-eevdf-for-interactivity.patch | CACHY: sched/fair: Tweak EEVDF for interactivity | CachyOS/linux 7.3/cachy 20b5544262ae
+0050-kconfig-restore-config-optimize-for-performance-o3.patch | Kconfig: Restore CONFIG_OPTIMIZE_FOR_PERFORMANCE_O3 | CachyOS/linux 7.3/cachy 12d17b523d3a
+0060-input-evdev-use-call-rcu-when-detaching-client.patch | Input: evdev - use call_rcu when detaching client | CachyOS/linux 7.3/cachy 1e648d759270
+0070-cachy-enable-background-reclaim-of-hugepages.patch | CACHY: Enable background reclaim of hugepages | CachyOS/linux 7.3/cachy ab9b9962958a
+0080-cachy-disable-watermark-boosting-by-default.patch | CACHY: Disable watermark boosting by default | CachyOS/linux 7.3/cachy c5f1297f1c0e
+0090-cachy-disable-proactive-compaction-by-default.patch | CACHY: Disable proactive compaction by default | CachyOS/linux 7.3/cachy 798ce5a82e1a
+0100-drm-amd-move-amd-private-color-to-kconfig.patch | drm/amd: Move AMD_PRIVATE_COLOR to Kconfig | CachyOS/linux 7.3/cachy b194f335960a
+0110-intel-pstate-implement-enable-parameter.patch | intel-pstate: Implement "enable" parameter | CachyOS/linux 7.3/cachy 85b1ee1995bd
+0120-cachy-disable-split-lock-mitigation-by-default.patch | CACHY: Disable split lock mitigation by default | CachyOS/linux 7.3/cachy 78df04208d2b
+0130-acpi-processor-disable-bus-master-check-for-amd.patch | ACPI: processor: Disable bus master check for AMD | CachyOS/linux 7.3/cachy 84c961d30741
+0140-cachy-mm-lru-gen-protect-the-working-set-of-the-last-100-jif.patch | CACHY: mm: lru-gen: Protect the working set of the last 100 jiffies | CachyOS/linux 7.3/cachy ad38870256bc
+0150-readdir-add-unlikely-hint-on-len-check.patch | readdir: add unlikely hint on len check | CachyOS/linux 7.3/cachy 2ced65838b77
+0160-sched-core-add-some-branch-hints-based-on-gcov-analysis.patch | sched/core: add some branch hints based on gcov analysis | CachyOS/linux 7.3/cachy 5f3e9d4f9a4c
+0170-list-mark-some-functions-as-always-inline.patch | list: Mark some functions as __always_inline | CachyOS/linux 7.3/cachy 6eaae2635d39
+0180-mm-swap-state-disable-swap-in-readahead.patch | mm/swap_state: Disable swap-in readahead | CachyOS/linux 7.3/cachy 6936583cfc28
+0190-x86-implement-tsc-directsync-for-systems-without-ia32-tsc-ad.patch | x86: implement tsc=directsync for systems without IA32_TSC_ADJUST | CachyOS/linux 7.3/cachy d77c58de7881
+0200-x86-touch-clocksource-watchdog-after-syncing-tscs.patch | x86: touch clocksource watchdog after syncing TSCs | CachyOS/linux 7.3/cachy dd199fccf526
+0210-x86-save-restore-tsc-counter-value-during-sleep-wake.patch | x86: save/restore TSC counter value during sleep/wake | CachyOS/linux 7.3/cachy 63239e08d7ef
+0220-x86-only-restore-tsc-if-we-have-ia32-tsc-adjust-or-directsyn.patch | x86: only restore TSC if we have IA32_TSC_ADJUST or directsync enabled | CachyOS/linux 7.3/cachy 9d04311179f0
+0230-x86-don-t-check-for-random-warps-if-using-direct-sync.patch | x86: don't check for random warps if using direct sync | CachyOS/linux 7.3/cachy e5c2a5fd8c3a
+0240-x86-revert-extra-time-added-to-check-for-tsc-wraps.patch | x86: revert extra time added to check for tsc wraps | CachyOS/linux 7.3/cachy f9012d5b1220
+0250-rust-allow-btf-generation-with-rust-lto.patch | rust: Allow BTF generation with Rust + LTO | CachyOS/linux 7.3/cachy 962bee17a9d7
+0260-sched-eevdf-ensure-that-vprot-will-never-go-above-a-min-slic.patch | sched/eevdf: Ensure that vprot will never go above a min slice | CachyOS/linux 7.3/sched c0606860890d
+0270-sched-eevdf-align-update-protect-slice-to-set-protect-slice.patch | sched/eevdf: Align update_protect_slice to set_protect_slice | CachyOS/linux 7.3/sched 78c4ec7aa4e0
+0280-sched-eevdf-handle-more-short-slice-waking-cases.patch | sched/eevdf: Handle more short slice waking cases | CachyOS/linux 7.3/sched 5901bea24460
+0290-zram-remove-unreachable-kernel-read-file-from-path-return-ch.patch | zram: remove unreachable kernel_read_file_from_path() return check | CachyOS/linux 7.3/zram 9be086eef442
+0300-zram-convert-to-sg-list-zsmalloc-object-read-api.patch | zram: convert to SG-list zsmalloc object read API | CachyOS/linux 7.3/zram b77fba3e5f56
+0310-zram-prefix-backends-printk-s.patch | zram: prefix backends printk-s | CachyOS/linux 7.3/zram d30d52920a73
+0320-zram-remove-debugfs-entry-on-init-failure.patch | zram: remove debugfs entry on init failure | CachyOS/linux 7.3/zram d1b78bc5e357
+0330-zram-zstd-do-not-allocate-empty-c-d-dictionaries.patch | zram: zstd: do not allocate empty C/D-dictionaries | CachyOS/linux 7.3/zram 88d502378e50
+0340-zram-lz4hc-pre-initialize-dictionary-stream-in-setup-params.patch | zram: lz4hc: pre-initialize dictionary stream in setup_params | CachyOS/linux 7.3/zram ba6f28d1807c
+0350-zram-lz4-use-lz4-decompress-safe-usingdict.patch | zram: lz4: use LZ4_decompress_safe_usingDict() | CachyOS/linux 7.3/zram 1b1ac1e19e6c
+0360-zram-lz4hc-use-lz4-decompress-safe-usingdict.patch | zram: lz4hc: use LZ4_decompress_safe_usingDict() | CachyOS/linux 7.3/zram bb5add5e24b5
+0370-zram-zstd-do-not-use-kvzalloc-for-zstd-allocations.patch | zram: zstd: do not use kvzalloc() for zstd allocations | CachyOS/linux 7.3/zram 04785e03d610
+0380-zram-reset-writeback-state-in-zram-reset-device.patch | zram: reset writeback state in zram_reset_device() | CachyOS/linux 7.3/zram 5b89f7a2f606
+0390-zram-split-zcomp-into-separate-r-w-streams.patch | zram: split zcomp into separate R/W streams | CachyOS/linux 7.3/zram d01d096e7f0a
+0400-zram-use-a-singleton-compression-context-for-recompression.patch | zram: use a singleton compression context for recompression | CachyOS/linux 7.3/zram 4f639dd99e44
+0410-zram-use-rw-semaphore-for-decompression-streams.patch | zram: use rw_semaphore for decompression streams | CachyOS/linux 7.3/zram 0e4911efd9f9
+0420-pci-add-intel-remapped-nvme-device-support.patch | PCI: Add Intel remapped NVMe device support | luxos (own, see the patch description)
+0430-kbuild-llvm-loop-pipelining-also-at-thinlto-link-time-build.patch | kbuild: LLVM loop pipelining, also at ThinLTO link time; build fix for bus master check | luxos (own, see the patch description)
+0440-sched-bore-burst-oriented-response-enhancer.patch | sched: BORE (Burst-Oriented Response Enhancer) | CachyOS/kernel-patches 7.3/sched/0001-bore-cachy.patch

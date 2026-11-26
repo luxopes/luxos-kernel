@@ -1,0 +1,55 @@
+From 20b5544262ae3282da6659c473f434dad267580d Mon Sep 17 00:00:00 2001
+From: Eric Naim <dnaim@cachyos.org>
+Date: Wed, 25 Mar 2026 04:08:25 +0800
+Subject: [PATCH] CACHY: sched/fair: Tweak EEVDF for interactivity
+
+Reduce the EEVDF's base slice, migration cost and number of tasks that
+can migrate at once to reduce latency and be more responsiveness, especially
+during high load.
+
+Default values are kept for !CONFIG_CACHY to maximize throughput.
+
+Link: https://github.com/marioroy/cachymod/blob/928adcb754b09b1be0a4e0a11d5ee3667bcf49eb/linux-cachymod-6.18/0260-fair-update-cachy-mods.patch
+Signed-off-by: Eric Naim <dnaim@cachyos.org>
+---
+ kernel/sched/fair.c  | 9 +++++++++
+ kernel/sched/sched.h | 2 +-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
+index 8dff37059faf70..d22579bd73f0d0 100644
+--- a/kernel/sched/fair.c
++++ b/kernel/sched/fair.c
+@@ -82,10 +82,19 @@ unsigned int sysctl_sched_tunable_scaling = SCHED_TUNABLESCALING_LOG;
+  *
+  * (default: 0.70 msec * (1 + ilog(ncpus)), units: nanoseconds)
+  */
++#ifdef CONFIG_CACHY
++unsigned int sysctl_sched_base_slice			= 400000ULL;
++static unsigned int normalized_sysctl_sched_base_slice	= 400000ULL;
++#else
+ unsigned int sysctl_sched_base_slice			= 700000ULL;
+ static unsigned int normalized_sysctl_sched_base_slice	= 700000ULL;
++#endif /* CONFIG_CACHY */
+ 
++#ifdef CONFIG_CACHY
++__read_mostly unsigned int sysctl_sched_migration_cost	= 400000UL;
++#else
+ __read_mostly unsigned int sysctl_sched_migration_cost	= 500000UL;
++#endif
+ 
+ static int __init setup_sched_thermal_decay_shift(char *str)
+ {
+diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
+index e656c7059bf864..828af26f9d89cd 100644
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -3139,7 +3139,7 @@ static inline void attach_one_task(struct rq *rq, struct task_struct *p)
+ 	attach_task(rq, p);
+ }
+ 
+-#ifdef CONFIG_PREEMPT_RT
++#if defined(CONFIG_PREEMPT_RT) || defined(CONFIG_CACHY)
+ # define SCHED_NR_MIGRATE_BREAK 8
+ #else
+ # define SCHED_NR_MIGRATE_BREAK 32
