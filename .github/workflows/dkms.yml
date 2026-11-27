@@ -37,13 +37,21 @@ jobs:
 
       - name: Build the NVIDIA drivers against ${{ env.TAG }}
         run: |
-          docker run --rm -v "$PWD:/work" archlinux:base-devel bash -c '
+          docker run --rm -e LOGS=/work/out -v "$PWD:/work" archlinux:base-devel bash -c '
               set -e
               pacman -Syu --noconfirm --needed clang lld llvm pahole git >/dev/null
               useradd -m builder
               mkdir -p /build
               bash /work/ci/dkms-test.sh /work/out/linux-luxos-headers-*.pkg.tar.zst /work/out/dkms-results.txt'
           cat out/dkms-results.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dkms-logs
+          path: out/*-make.log
+          if-no-files-found: ignore
 
       - name: Open an issue (GitHub e-mails the repository owner)
         if: failure()

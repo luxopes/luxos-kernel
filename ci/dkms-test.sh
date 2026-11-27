@@ -15,6 +15,7 @@ HEADERS=${1:?usage: dkms-test.sh HEADERS_PACKAGE RESULTS_FILE}
 RESULTS=${2:?usage: dkms-test.sh HEADERS_PACKAGE RESULTS_FILE}
 LUXOS_REPO=https://github.com/luxopes/LuxOS-Arch.git
 SCRATCH=/build/dkms
+# LOGS=DIR: keep make.log of failed builds there
 step() { printf '\n==> %s\n' "$*"; }
 unpack() { bsdtar -xpf "$1" -C / --exclude .PKGINFO --exclude .BUILDINFO --exclude .MTREE --exclude .INSTALL; }
 
@@ -62,7 +63,9 @@ for d in "${drivers[@]}"; do
         result=FAILED
         log=$(ls /var/lib/dkms/nvidia/"$ver"/build/make.log 2>/dev/null || true)
         echo "--- $name $ver failed:" >&2
-        grep -E 'error|Error' "${log:-$SCRATCH/dkms-$ver.log}" | head -30 >&2 || tail -40 "$SCRATCH/dkms-$ver.log" >&2
+        # conftest errors are expected noise; the end of make.log shows the real failure
+        tail -60 "${log:-$SCRATCH/dkms-$ver.log}" >&2
+        [[ -z ${LOGS:-} ]] || cp "${log:-$SCRATCH/dkms-$ver.log}" "$LOGS/$name-make.log"
         ((required)) && failed_required=1
     fi
     printf '%-13s %-12s %s (%d s)%s\n' "$name" "$ver" "$result" $(( $(date +%s) - start )) \
