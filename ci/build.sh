@@ -5,7 +5,7 @@
 #
 # 1. installs the build dependencies, 2. fetches Arch Linux's current kernel config (recorded in
 # out/build-info.txt), 3. builds the packages with makepkg (kernel.org signature checked),
-# 4. boots the result in QEMU (ci/boot-test.sh).
+# 4. boots the result in QEMU (ci/boot-test.sh), 5. builds the NVIDIA DKMS drivers against it (ci/dkms-test.sh).
 set -Eeuo pipefail
 VERSION=${1:?usage: build.sh VERSION}
 WORK=/work
@@ -56,6 +56,9 @@ df -h "$BUILD"
 step "Boot test"
 bash "$WORK/ci/boot-test.sh" "$OUT"/linux-luxos-[0-9]*.pkg.tar.zst
 
+step "NVIDIA DKMS drivers"
+bash "$WORK/ci/dkms-test.sh" "$OUT"/linux-luxos-headers-*.pkg.tar.zst "$BUILD/dkms-results.txt"
+
 cd "$OUT"
 sha256sum ./*.pkg.tar.zst config > SHA256SUMS
 {
@@ -67,5 +70,7 @@ sha256sum ./*.pkg.tar.zst config > SHA256SUMS
     echo "build time:      $(( (end - start) / 60 )) min on $(nproc) CPUs"
     echo "compiler:        $(clang --version | head -1), ThinLTO"
     echo "rust:            $(rustc --version)"
+    echo "dkms test:"
+    sed 's/^/  /' "$BUILD/dkms-results.txt"
 } > build-info.txt
 cat build-info.txt

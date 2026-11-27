@@ -1,0 +1,57 @@
+# LuxOS kernel: build the NVIDIA DKMS drivers against a published linux-luxos release (ci/dkms-test.sh).
+# kernel.yml runs the same test before every release; this workflow checks a release again later, when
+# Arch Linux or LuxOS update a driver. A failure opens an issue.
+name: dkms
+
+on:
+  schedule:
+    - cron: "41 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release to test (e.g. v7.3.6-3); empty = latest"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  dkms:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download linux-luxos-headers
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ github.event.inputs.tag }}"
+          [ -n "$tag" ] || tag=$(gh release list --limit 1 --exclude-drafts --json tagName --jq '.[0].tagName')
+          echo "TAG=$tag" >> "$GITHUB_ENV"
+          mkdir -p out
+          gh release download "$tag" -D out -p 'linux-luxos-headers-*.pkg.tar.zst' -p SHA256SUMS
+          (cd out && grep 'headers.*\.pkg\.tar\.zst$' SHA256SUMS | sha256sum -c -)
+
+      - name: Build the NVIDIA drivers against ${{ env.TAG }}
+        run: |
+          docker run --rm -v "$PWD:/work" archlinux:base-devel bash -c '
+              set -e
+              pacman -Syu --noconfirm --needed clang lld llvm pahole git >/dev/null
+              useradd -m builder
+              mkdir -p /build
+              bash /work/ci/dkms-test.sh /work/out/linux-luxos-headers-*.pkg.tar.zst /work/out/dkms-results.txt'
+          cat out/dkms-results.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open an issue (GitHub e-mails the repository owner)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          title="NVIDIA DKMS build failed: ${TAG:-release}"
+          body="Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          num=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          if [ -n "$num" ]; then gh issue comment "$num" --body "$body"; else gh issue create --title "$title" --body "$body"; fi
