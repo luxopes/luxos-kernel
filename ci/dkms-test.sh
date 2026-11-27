@@ -65,7 +65,16 @@ for d in "${drivers[@]}"; do
         echo "--- $name $ver failed:" >&2
         # conftest errors are expected noise; the end of make.log shows the real failure
         tail -60 "${log:-$SCRATCH/dkms-$ver.log}" >&2
-        [[ -z ${LOGS:-} ]] || cp "${log:-$SCRATCH/dkms-$ver.log}" "$LOGS/$name-make.log"
+        if [[ -n ${LOGS:-} ]]; then
+            cp "${log:-$SCRATCH/dkms-$ver.log}" "$LOGS/$name-make.log"
+            # the build files and one verbose compile of the first failing object, for debugging
+            b=/var/lib/dkms/nvidia/$ver/build
+            if [[ -d $b ]]; then
+                tar -czf "$LOGS/$name-kbuild.tar.gz" -C "$b" $(cd "$b" && ls Kbuild Makefile conftest.sh */*.Kbuild 2>/dev/null) || true
+                (cd "$b" && make -j1 V=1 LLVM=1 KERNEL_UNAME="$kver" NV_EXCLUDE_BUILD_MODULES= IGNORE_PREEMPT_RT_PRESENCE=1 \
+                    modules >"$LOGS/$name-verbose.log" 2>&1) || true
+            fi
+        fi
         ((required)) && failed_required=1
     fi
     printf '%-13s %-12s %s (%d s)%s\n' "$name" "$ver" "$result" $(( $(date +%s) - start )) \

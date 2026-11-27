@@ -50,7 +50,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dkms-logs
-          path: out/*-make.log
+          path: |
+            out/*-make.log
+            out/*-verbose.log
+            out/*-kbuild.tar.gz
           if-no-files-found: ignore
 
       - name: Open an issue (GitHub e-mails the repository owner)
