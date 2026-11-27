@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LuxOS <luxos@lux-ai.cz>
+Date: Fri, 27 Nov 2026 03:20:00 +0100
+Subject: [PATCH] kbuild: clang: let external modules build as with gcc
+
+Out-of-tree modules built by DKMS against a clang-built kernel get the
+kernel's clang-only errors. Their makefiles and code were written for gcc,
+and the NVIDIA 470 legacy driver stops twice:
+
+- it adds -MD to ccflags-y next to kbuild's own -Wp,-MMD; gcc ignores the
+  unused option, clang fails with "argument unused during compilation";
+- it defines "NvU32 os_get_cpu_number()" after the prototype with (void);
+  gcc accepts that under -Werror=strict-prototypes, clang does not.
+
+Keep both checks for the kernel itself. When KBUILD_EXTMOD is set, drop
+-Werror=unused-command-line-argument and keep strict prototypes a warning.
+---
+--- a/scripts/Makefile.clang
++++ b/scripts/Makefile.clang
+@@ -37,6 +37,10 @@
+ CLANG_FLAGS	+= -Werror=unknown-warning-option
+ CLANG_FLAGS	+= -Werror=ignored-optimization-argument
+ CLANG_FLAGS	+= -Werror=option-ignored
++# LuxOS: not for external modules (DKMS). Their makefiles were written for gcc, which
++# ignores unused options; the NVIDIA 470 driver passes -MD next to kbuild's -Wp,-MMD.
++ifeq ($(KBUILD_EXTMOD),)
+ CLANG_FLAGS	+= -Werror=unused-command-line-argument
++endif
+ KBUILD_CPPFLAGS	+= $(CLANG_FLAGS)
+ export CLANG_FLAGS
+--- a/scripts/Makefile.warn
++++ b/scripts/Makefile.warn
+@@ -13,7 +13,13 @@
+ KBUILD_CFLAGS += -Werror=implicit-function-declaration
+ KBUILD_CFLAGS += -Werror=implicit-int
+ KBUILD_CFLAGS += -Werror=return-type
++# LuxOS: only a warning for external modules (DKMS) built with clang. gcc accepts a
++# definition "f()" after the prototype "f(void)", clang does not (NVIDIA 470 driver).
++ifeq ($(CONFIG_CC_IS_CLANG)$(if $(KBUILD_EXTMOD),m),ym)
++KBUILD_CFLAGS += -Wstrict-prototypes
++else
+ KBUILD_CFLAGS += -Werror=strict-prototypes
++endif
+ KBUILD_CFLAGS += -Wno-format-security
+ KBUILD_CFLAGS += -Wno-trigraphs
+ KBUILD_CFLAGS += -Wno-frame-address
