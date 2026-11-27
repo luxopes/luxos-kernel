@@ -19,7 +19,8 @@ The kernel of [LuxOS](https://lsl.lux-ai.cz/luxos/) (`linux-luxos`), built autom
     NVMe drives (laptops shipped with Windows), evdev, AMD idle and colour management, a sysctl to turn off
     unprivileged user namespaces, Rust together with LTO;
   - own LuxOS patches (`luxos` in SOURCES): rebased versions where the CachyOS commit does not apply to
-    the stable release, LLVM loop pipelining also at ThinLTO link time.
+    the stable release, LLVM loop pipelining also at ThinLTO link time, DKMS modules (written for gcc)
+    build without clang's unused-argument error.
   - Left out on purpose: PCIe ACS override (weakens IOMMU isolation), BBRv3 (renames `bbr`), ADIOS,
     Apple T2, out-of-tree modules.
 - **New series** (e.g. 7.4): [`ci/pick-version.py`](ci/pick-version.py) takes a series only when
